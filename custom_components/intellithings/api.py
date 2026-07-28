@@ -6,11 +6,12 @@ config flow can validate credentials without building a coordinator first.
 
 from __future__ import annotations
 
+import asyncio
 from typing import Any
 
 import aiohttp
 
-from .const import API_PREFIX
+from .const import API_PREFIX, REQUEST_TIMEOUT
 
 
 class IntelliThingsError(Exception):
@@ -46,7 +47,13 @@ class IntelliThingsApi:
         headers = {"Authorization": f"Bearer {self._token}", "Accept": "application/json"}
 
         try:
-            async with self._session.request(method, url, headers=headers, **kwargs) as response:
+            async with self._session.request(
+                method,
+                url,
+                headers=headers,
+                timeout=aiohttp.ClientTimeout(total=REQUEST_TIMEOUT),
+                **kwargs,
+            ) as response:
                 # 401 is a bad token; 403 is a good token whose plugin was turned
                 # off, or a read-only entity. Both mean "stop and tell the user"
                 # rather than "retry", so they share a class.
@@ -57,8 +64,13 @@ class IntelliThingsApi:
                         f"{response.status} from {path}: {await _message(response)}"
                     )
                 return await response.json()
-        except aiohttp.ClientError as err:
-            raise IntelliThingsError(f"Cannot reach {self._base_url}: {err}") from err
+        # asyncio.TimeoutError is NOT an aiohttp.ClientError — an exceeded total
+        # timeout raises it bare, so catching only ClientError would let it escape
+        # the coordinator as an unhandled exception rather than a clean retry.
+        except (aiohttp.ClientError, asyncio.TimeoutError) as err:
+            raise IntelliThingsError(
+                f"Cannot reach {self._base_url}: {err or type(err).__name__}"
+            ) from err
 
 
 async def _message(response: aiohttp.ClientResponse) -> str:
