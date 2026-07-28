@@ -1,0 +1,29 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect a device",
+        "description": "Open the device in IntelliThings, click the Home Assistant button in the header and generate an access token.",
+        "data": {
+          "base_url": "Server URL",
+          "token": "Access token"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Reconnect {name}",
+        "description": "The access token for {name} is no longer valid. Generate a new one from the device's detail page and paste it here.",
+        "data": {
+          "token": "Access token"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Could not reach the server. Check the URL and that Home Assistant can reach it.",
+      "invalid_auth": "The token was rejected. It may have been revoked, or the Home Assistant plugin may be switched off for your organisation.",
+      "unknown": "The server responded, but did not describe a device."
+    },
+    "abort": {
+      "already_configured": "This device is already set up."
+    }
+  }
+}

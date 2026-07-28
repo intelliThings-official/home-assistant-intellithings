@@ -1,0 +1,13 @@
+{
+  "domain": "intellithings",
+  "name": "IntelliThings",
+  "codeowners": ["@intelliThings-official"],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/intelliThings-official/home-assistant-intellithings",
+  "integration_type": "device",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/intelliThings-official/home-assistant-intellithings/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}
