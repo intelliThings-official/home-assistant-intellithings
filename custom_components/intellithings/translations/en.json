@@ -7,6 +7,10 @@
         "data": {
           "base_url": "Server URL",
           "token": "Access token"
+        },
+        "data_description": {
+          "base_url": "HTTPS is required unless the server is on your local network.",
+          "token": "The access token generated from the device's detail page. It authenticates this one device."
         }
       },
       "reauth_confirm": {
@@ -14,10 +18,14 @@
         "description": "The access token for {name} is no longer valid. Generate a new one from the device's detail page and paste it here.",
         "data": {
           "token": "Access token"
+        },
+        "data_description": {
+          "token": "The new access token for your device."
         }
       }
     },
     "error": {
+      "invalid_url": "That server URL is not usable. Use a full http:// or https:// address — HTTPS is required unless the server is on your local network.",
       "cannot_connect": "Could not reach the server. Check the URL and that Home Assistant can reach it.",
       "invalid_auth": "The token was rejected. It may have been revoked, or the Home Assistant plugin may be switched off for your organisation.",
       "unknown": "The server responded, but did not describe a device."

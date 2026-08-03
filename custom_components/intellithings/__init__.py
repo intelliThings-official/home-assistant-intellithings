@@ -13,11 +13,20 @@ import logging
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
+from homeassistant.exceptions import (
+    ConfigEntryAuthFailed,
+    ConfigEntryError,
+    ConfigEntryNotReady,
+)
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .api import IntelliThingsApi, IntelliThingsAuthError, IntelliThingsError
+from .api import (
+    IntelliThingsApi,
+    IntelliThingsAuthError,
+    IntelliThingsError,
+    IntelliThingsUrlError,
+)
 from .const import CONF_BASE_URL, CONF_TOKEN, DOMAIN
 from .coordinator import IntelliThingsCoordinator
 
@@ -33,14 +42,16 @@ PLATFORMS: list[Platform] = [
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    api = IntelliThingsApi(
-        async_get_clientsession(hass),
-        entry.data[CONF_BASE_URL],
-        entry.data[CONF_TOKEN],
-    )
-
     try:
+        api = IntelliThingsApi(
+            async_get_clientsession(hass),
+            entry.data[CONF_BASE_URL],
+            entry.data[CONF_TOKEN],
+        )
         discovery = await api.discovery()
+    except IntelliThingsUrlError as err:
+        # Reconfiguring is the only way out, so do not retry.
+        raise ConfigEntryError(str(err)) from err
     except IntelliThingsAuthError as err:
         raise ConfigEntryAuthFailed(str(err)) from err
     except IntelliThingsError as err:

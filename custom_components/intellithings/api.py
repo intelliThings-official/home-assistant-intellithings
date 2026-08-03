@@ -12,14 +12,22 @@ from typing import Any
 import aiohttp
 
 from .const import API_PREFIX, REQUEST_TIMEOUT
+from .util import redact_token, validate_url
 
 
 class IntelliThingsError(Exception):
     """The platform could not be reached, or returned something unusable."""
 
+    def __str__(self) -> str:
+        return redact_token(super().__str__())
+
 
 class IntelliThingsAuthError(IntelliThingsError):
     """The token was rejected, or the plugin is switched off for the org."""
+
+
+class IntelliThingsUrlError(IntelliThingsError):
+    """The server URL is malformed, or plain HTTP to a remote host."""
 
 
 class IntelliThingsApi:
@@ -27,7 +35,10 @@ class IntelliThingsApi:
 
     def __init__(self, session: aiohttp.ClientSession, base_url: str, token: str) -> None:
         self._session = session
-        self._base_url = base_url.rstrip("/")
+        try:
+            self._base_url = validate_url(base_url).rstrip("/")
+        except ValueError as err:
+            raise IntelliThingsUrlError(str(err)) from err
         self._token = token
 
     async def discovery(self) -> dict[str, Any]:
