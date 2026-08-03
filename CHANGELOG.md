@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-08-03
+
+### Fixed
+- HACS validation workflow now uses the maintained `hacs/action`, fixing the
+  failing release pipeline.
+
 ## [0.2.0] - 2026-08-03
 
 ### Added
@@ -75,7 +81,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Token-based authentication with reauthentication flow.
 - Coordinator-based polling for state updates.
 
-[Unreleased]: https://github.com/intelliThings-official/home-assistant-intellithings/compare/0.2.0...HEAD
+[Unreleased]: https://github.com/intelliThings-official/home-assistant-intellithings/compare/0.2.1...HEAD
+[0.2.1]: https://github.com/intelliThings-official/home-assistant-intellithings/compare/0.2.0...0.2.1
 [0.2.0]: https://github.com/intelliThings-official/home-assistant-intellithings/compare/0.1.5...0.2.0
 [0.1.5]: https://github.com/intelliThings-official/home-assistant-intellithings/compare/0.1.4...0.1.5
 [0.1.4]: https://github.com/intelliThings-official/home-assistant-intellithings/compare/0.1.3...0.1.4
