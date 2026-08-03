@@ -51,11 +51,17 @@ statistics and energy-style charts.
 
 ## Behaviour
 
-- State is polled every 30 seconds. Commands are sent immediately and followed by
+- State is polled every 10 seconds. Commands are sent immediately and followed by
   a refresh, because the platform normalises values and may reject one.
+- The API allows 300 requests a minute per IP address, and every device in one
+  Home Assistant instance shares that address — so roughly **50 devices per
+  instance** at the default rate. Past that, turn off *Enable polling for
+  updates* in the entry's system options and call `homeassistant.update_entity`
+  from an automation at an interval that suits your fleet.
 - Changing which datastreams are exposed — or their entity type, bounds or
   options — is picked up automatically within one poll. The integration reloads
   itself and rebuilds its entities; names, areas and history survive it.
+  Datastreams that stop being exposed are removed from Home Assistant.
 - Entities show as unavailable when the device is offline, rather than showing
   the last known reading.
 - Revoking the token, or switching the plugin off for the organisation, cuts
@@ -70,9 +76,8 @@ toggle. A thermostat works today as a `number` plus a `select`.
 
 ## Development
 
-This lives in the IntelliThings monorepo under `home-assistant/` and is mirrored
-to a public repository for HACS. Run the value-coercion self-check with:
+Run the value-coercion self-check with:
 
 ```
-python3 home-assistant/test_util.py
+python3 test_util.py
 ```
