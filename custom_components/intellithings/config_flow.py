@@ -5,17 +5,29 @@ from __future__ import annotations
 from typing import Any
 
 import voluptuous as vol
-
 from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.selector import (
+    TextSelector,
+    TextSelectorConfig,
+    TextSelectorType,
+)
 
-from .api import IntelliThingsApi, IntelliThingsAuthError, IntelliThingsError
+from .api import (
+    IntelliThingsApi,
+    IntelliThingsAuthError,
+    IntelliThingsError,
+    IntelliThingsUrlError,
+)
 from .const import CONF_BASE_URL, CONF_TOKEN, DOMAIN
+
+# Masked so the token is not shown in plain text while it is being pasted.
+TOKEN_SELECTOR = TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD))
 
 STEP_USER_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_BASE_URL): str,
-        vol.Required(CONF_TOKEN): str,
+        vol.Required(CONF_TOKEN): TOKEN_SELECTOR,
     }
 )
 
@@ -34,9 +46,13 @@ class IntelliThingsConfigFlow(ConfigFlow, domain=DOMAIN):
             base_url = user_input[CONF_BASE_URL].strip().rstrip("/")
             token = user_input[CONF_TOKEN].strip()
 
-            api = IntelliThingsApi(async_get_clientsession(self.hass), base_url, token)
             try:
+                api = IntelliThingsApi(
+                    async_get_clientsession(self.hass), base_url, token
+                )
                 discovery = await api.discovery()
+            except IntelliThingsUrlError:
+                errors["base"] = "invalid_url"
             except IntelliThingsAuthError:
                 errors["base"] = "invalid_auth"
             except IntelliThingsError:
@@ -77,11 +93,13 @@ class IntelliThingsConfigFlow(ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             token = user_input[CONF_TOKEN].strip()
-            api = IntelliThingsApi(
-                async_get_clientsession(self.hass), entry.data[CONF_BASE_URL], token
-            )
             try:
+                api = IntelliThingsApi(
+                    async_get_clientsession(self.hass), entry.data[CONF_BASE_URL], token
+                )
                 await api.discovery()
+            except IntelliThingsUrlError:
+                errors["base"] = "invalid_url"
             except IntelliThingsAuthError:
                 errors["base"] = "invalid_auth"
             except IntelliThingsError:
@@ -93,7 +111,7 @@ class IntelliThingsConfigFlow(ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="reauth_confirm",
-            data_schema=vol.Schema({vol.Required(CONF_TOKEN): str}),
+            data_schema=vol.Schema({vol.Required(CONF_TOKEN): TOKEN_SELECTOR}),
             errors=errors,
             description_placeholders={"name": entry.title},
         )

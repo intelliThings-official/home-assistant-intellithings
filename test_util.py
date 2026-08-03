@@ -13,7 +13,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent / "custom_components" / "intellithings"))
 
-from util import float_or, to_bool, to_float  # noqa: E402
+from util import float_or, redact_token, to_bool, to_float, validate_url
 
 
 def test_to_bool():
@@ -46,8 +46,48 @@ def test_float_or():
     assert float_or("junk", 100.0) == 100.0
 
 
+def test_validate_url():
+    for good in (
+        "https://api.example.com",
+        "https://api.example.com:8443/base",
+        "http://localhost:8123",
+        "http://127.0.0.1",
+        "http://192.168.1.10:8080",
+        "http://[::1]:8123",
+        "http://nas.local",
+    ):
+        assert validate_url(good) == good, good
+
+    # Plain HTTP to anything not demonstrably local, malformed input, and hosts
+    # that merely *start* with a local-looking name must all be rejected.
+    for bad in (
+        "http://api.example.com",
+        "http://localhost.evil.com",
+        "http://10.evil.com",
+        "ftp://api.example.com",
+        "api.example.com",
+        "https://",
+        "javascript:alert(1)",
+        "https://api.example.com:notaport",
+    ):
+        try:
+            validate_url(bad)
+        except ValueError:
+            continue
+        raise AssertionError(f"accepted {bad}")
+
+
+def test_redact_token():
+    assert redact_token("Authorization: Bearer abc123") == (
+        "Authorization: Bearer [REDACTED]"
+    )
+    assert redact_token("no token here") == "no token here"
+
+
 if __name__ == "__main__":
     test_to_bool()
     test_to_float()
     test_float_or()
+    test_validate_url()
+    test_redact_token()
     print("ok")
