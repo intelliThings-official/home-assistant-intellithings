@@ -14,6 +14,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import IntelliThingsApi, IntelliThingsAuthError, IntelliThingsError
@@ -62,6 +63,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             coordinator.device.get("name"),
         )
 
+    _prune_removed_entities(hass, entry, coordinator.device.get("identifier"), entities)
+
     # Grouped by domain here so each platform file is a plain list comprehension.
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {
         "coordinator": coordinator,
@@ -70,6 +73,33 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
+
+
+def _prune_removed_entities(
+    hass: HomeAssistant, entry: ConfigEntry, identifier: str, entities: list[dict]
+) -> None:
+    """Delete registry entries for datastreams the platform no longer exposes.
+
+    Home Assistant keeps a registry entry after the entity stops being provided
+    and shows it as unavailable forever, so un-exposing a datastream would leave
+    a dead row behind that only a manual delete clears. Discovery is the
+    authority on what exists, so anything it omits goes.
+
+    Safe to run on every setup: a failed discovery raises ConfigEntryNotReady
+    above and never reaches here, so an empty list means genuinely nothing is
+    exposed rather than a request that did not land.
+    """
+    registry = er.async_get(hass)
+    # Same unique_id IntelliThingsEntity builds — the one identity both sides agree on.
+    live = {f"{identifier}_{e['key']}" for e in entities}
+
+    for stale in [
+        r
+        for r in er.async_entries_for_config_entry(registry, entry.entry_id)
+        if r.unique_id not in live
+    ]:
+        _LOGGER.info("Removing %s — no longer exposed by the platform", stale.entity_id)
+        registry.async_remove(stale.entity_id)
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
